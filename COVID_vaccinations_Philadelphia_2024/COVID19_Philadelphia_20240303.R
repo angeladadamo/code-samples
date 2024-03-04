@@ -1,16 +1,21 @@
-# rerunning the analysis using the updated dataset from Usama in July of 2023
+############# rerunning the analysis using the updated dataset in July of 2023 #############
+
+# load working directory
 setwd("/Users/angeladadamo/Documents/THESIS PROJECT/Philadelphia Data")
 
+# load the data
 cleanvaxdata_2 <- read.csv("OneDrive_1_7-11-2023/Clean_Data_Vax_Disparities_Philadelphia_WIDE_v2.csv")
 
-library(ggplot2)
+# load packages
+library(ggplot2) # plots
 library(plotrix) #for standard errors
 
+# make data based on complete case (no NAs)
 cleanvaxdata_2_missing <- cleanvaxdata_2[!complete.cases(cleanvaxdata_2),]
-summary(cleanvaxdata_2_missing)
-# no NA values
+# check
+summary(cleanvaxdata_2_missing) # no NA values
 
-## creating new variables for MH income tertiles: low, medium, high
+############# creating new variables for MH income tertiles: low, medium, high #############
 
 # find tertiles
 vTert <- quantile(cleanvaxdata_2$mhi, c(0:3/3))
@@ -23,19 +28,17 @@ cleanvaxdata_2$MHItertiles <- with(cleanvaxdata_2,
                                      labels = c("Low", "Medium", "High")))
 
 
-## create a box plot to check values if categorical variable
+# create a box plot to check values if categorical variable
 ggplot(cleanvaxdata_2, aes(x=MHItertiles, y=mhi, group= MHItertiles))+
   geom_boxplot()
 
 # or (do not need group argument here)
 ggplot(cleanvaxdata_2, aes(x=MHItertiles, y=mhi)) + geom_boxplot()
 
-
-## frequency table to check values too
+# frequency table to check values too
 as.data.frame(table(cleanvaxdata_2$MHItertiles))
 
-
-## create majority race/ethnicity variable
+# create majority race/ethnicity variable
 cleanvaxdata_2$majority_race_ethn <- 0
 
 for (i in 1:nrow(cleanvaxdata_2)) {
@@ -55,20 +58,18 @@ for (i in 1:nrow(cleanvaxdata_2)) {
   cleanvaxdata_2$majority_race_ethn[i] <- nameVal
 }
 
-## create a frequency distribution table for the majority variable
+# create a frequency distribution table for the majority variable
 table(cleanvaxdata_2$majority_race_ethn)
 
 
-## transforming majority race/ethn variable into a factor
+# transforming majority race/ethn variable into a factor
 cleanvaxdata_2$majority_race_ethn <- as.factor(cleanvaxdata_2$majority_race_ethn)
 
-## frequency table to check values again
+# frequency table to check values again
 as.data.frame(table(cleanvaxdata_2$majority_race_ethn))
 
-## Truncating values to 1 for the vaccination rate variable
-#values already all under 1!
 
-## Running univariate statistics!
+############# Running univariate statistics! #############
 
 # independent variable #1 -- median household income, categorical (MHITertiles)
 #central tendency = mode
@@ -85,6 +86,7 @@ Mode(cleanvaxdata_2$MHItertiles)
 # Creating a frequency distribution of MHITertiles
 as.data.frame(table(cleanvaxdata_2$MHItertiles))
 
+
 # independent variable #2 -- majority racial/ethnic group, categorical (majority_race_ethn)
 #central tendency = mode
 #spread = frequency distribution
@@ -94,6 +96,7 @@ Mode(cleanvaxdata_2$majority_race_ethn)
 
 # Creating a frequency distribution of majority_race_ethn
 as.data.frame(table(cleanvaxdata_2$majority_race_ethn))
+
 
 # dependent variable -- proportion fully vaccinated from april 13th, continuous (proportion_fully_vaccinated_total)
 #central tendency = mean, median, mode
@@ -199,7 +202,8 @@ sd(cleanvaxdata_2$proportion_fully_vaccinated_cumulative_2022_06_26)
 # Proportion fully vaccinated by August 7th, 2022
 sd(cleanvaxdata_2$proportion_fully_vaccinated_cumulative_2022_08_07)
 
-## Running bivariate statistics!
+
+############# Running bivariate statistics! #############
 
 #ANOVA between income level and each of the vaccination rates by date
 #ANOVA between majority racial/ethnic group and each of the vaccination rates by date
