@@ -1,35 +1,42 @@
-# first, set working directory
+# Set working directory
 setwd("/Users/angeladadamo/Documents/THESIS PROJECT/Thesis Data")
-# load packages!
-library(ggplot2)
 
-# load the data!
+# load packages
+library(ggplot2) # for plots
+library(dplyr) # for data management
+library(tidyr) # for data management
+library(RColorBrewer) # for colors in plots
+library(plotrix) # for standard errors
+
+# load the data
 cleanvaxdata<-read.csv("../Clean_Data_Vax_Disparities.csv")
 
-
-# before cleaning no NA values, I'd do an exploration here. who are those NA values?
+# before cleaning no NA values, do an exploration. Who are those NA values?
 cleanvaxdata_missing <- cleanvaxdata[!complete.cases(cleanvaxdata),]
 summary(cleanvaxdata_missing)
+
 # what's the missing pattern? what variables are missing most commonly?
 # lets look at missing vax
 missing_vax<-cleanvaxdata_missing[is.na(cleanvaxdata_missing$proportion_fully_vaccinated_total),]
 hist(missing_vax$total_pop)
+
 # very small ZCTAs
 # lets look at missing demographics
 missing_demo<-cleanvaxdata_missing[is.na(cleanvaxdata_missing$proportion_hisp),]
 missing_demo$total_pop
-# unpopulated ZCTAs
-
 
 # now we can create our anlaytic dataset
 ## creating dataset with no NA values
 cleanvaxdata_NONA <- na.omit(cleanvaxdata)
 
 ## creating dataset with only zipcodes in LA Metropolitan
-cleanvaxdata_LAMET <- cleanvaxdata[cleanvaxdata$county == 'Los Angeles' | cleanvaxdata$county == 'Ventura' | cleanvaxdata$county == 'Orange' | cleanvaxdata$county == 'Riverside' | cleanvaxdata$county == 'San Bernardino', ]
-## good! just showing an alternative here:
+cleanvaxdata_LAMET <- cleanvaxdata[cleanvaxdata$county == 'Los Angeles' |
+                                     cleanvaxdata$county == 'Ventura' |
+                                     cleanvaxdata$county == 'Orange' |
+                                     cleanvaxdata$county == 'Riverside' |
+                                     cleanvaxdata$county == 'San Bernardino', ]
+## An alternative:
 cleanvaxdata_LAMET <- cleanvaxdata[cleanvaxdata$county %in% c('Los Angeles', 'Ventura', 'Orange', 'Riverside','San Bernardino'), ]
-## of note, the seond one already excludes those pesky missing ZCTAs
 
 ## creating dataset with only LA Met zipcodes and no NA values
 cleanvaxdata_LAMET_NONA <- na.omit(cleanvaxdata_LAMET)
@@ -58,7 +65,7 @@ cleanvaxdata_LAMET_NONA$log_proportion_fully_vaccinated_total <- log(cleanvaxdat
     cleanvaxdata_LAMET_NONA$proportion_nhother <- cleanvaxdata_LAMET_NONA$pct_nhother
     
 
-## creating new variables for MH income tertiles: low, medium, high
+## Creating new variables for MH income tertiles: low, medium, high
 
 # find tertiles
 vTert <- quantile(cleanvaxdata_LAMET_NONA$mhi, c(0:3/3))
@@ -71,13 +78,12 @@ cleanvaxdata_LAMET_NONA$MHItertiles <- with(cleanvaxdata_LAMET_NONA,
                    labels = c("Low", "Medium", "High")))
 
 ## creating numeric variables for income terciles
-
 cleanvaxdata_LAMET_NONA$mhiLow <- ifelse(cleanvaxdata_LAMET_NONA$MHItertiles == 'Low', 1, 0)
 cleanvaxdata_LAMET_NONA$mhiMedium <- ifelse(cleanvaxdata_LAMET_NONA$MHItertiles == 'Medium', 1, 0)
 cleanvaxdata_LAMET_NONA$mhiHigh <- ifelse(cleanvaxdata_LAMET_NONA$MHItertiles == 'High', 1, 0)
 
 
-## creating entropy, h, variable (link site)
+## creating entropy, h, variable
 
 #creating a log function
 customLog <- function(x) {
@@ -95,7 +101,7 @@ cleanvaxdata_LAMET_NONA$entropyH <- -1 * ( (cleanvaxdata_LAMET_NONA$proportion_h
 ggplot(cleanvaxdata_LAMET_NONA, aes(x=MHItertiles, y=mhi, group= MHItertiles))+
     geom_boxplot()
 
-# or (do not need group argument here)
+# or can do
 ggplot(cleanvaxdata_LAMET_NONA, aes(x=MHItertiles, y=mhi)) + geom_boxplot()
 
 ## plotting income tertiles against entropy, h
@@ -110,13 +116,15 @@ ggplot(cleanvaxdata_LAMET_NONA, aes(x=entropyH, y=proportion_fully_vaccinated_to
 # histograms are also useful:
 ggplot(cleanvaxdata_LAMET_NONA, aes(x=entropyH)) + 
   geom_histogram(bins=30, fill="gray", color="black")
-# you can also explore by county!
+
+# explore by county
 ggplot(cleanvaxdata_LAMET_NONA, aes(x=entropyH)) + 
   geom_histogram(bins=30, fill="gray", color="black") +
   facet_wrap(~county)
 ggplot(cleanvaxdata_LAMET_NONA, aes(x=mhi)) + 
   geom_histogram(bins=30, fill="gray", color="black") +
   facet_wrap(~county)
+
 # or even overlay
 ggplot(cleanvaxdata_LAMET_NONA, aes(x=mhi)) + 
   geom_density(aes(color=county))
@@ -132,7 +140,7 @@ ggplot(cleanvaxdata_LAMET_NONA, aes(x=proportion_nhwhite)) +
 ## frequency table to check values too
 as.data.frame(table(cleanvaxdata_LAMET_NONA$MHItertiles))
 
-## create minority variable
+## Create minority variable
 cleanvaxdata_LAMET_NONA$minority_group <- 0
 
 for (i in 1:nrow(cleanvaxdata_LAMET_NONA)) {
@@ -148,7 +156,7 @@ for (i in 1:nrow(cleanvaxdata_LAMET_NONA)) {
   cleanvaxdata_LAMET_NONA$minority_group[i] <- nameVal
 }
 
-## create majority race/ethnicity variable
+## Create majority race/ethnicity variable
 cleanvaxdata_LAMET_NONA$majority <- 0
 
 for (i in 1:nrow(cleanvaxdata_LAMET_NONA)) {
@@ -191,7 +199,7 @@ for (i in 1:nrow(cleanvaxdata_LAMET_NONA)) {
   }
 }
 
-## Running univariate statistics!
+##### Running univariate statistics #####
 
   # independent variable #1 -- median household income, categorical (MHITertiles)
     #central tendency = mode
@@ -234,7 +242,7 @@ for (i in 1:nrow(cleanvaxdata_LAMET_NONA)) {
         # Finding the standard deviation of vaccination rate variable
         sd(cleanvaxdata_LAMET_NONA$prop_fully_vax_truncated)
         
-## Running bivariate statistics!
+##### Running bivariate statistics #####
         
   #ANOVA between income level and vaccination rates
   #ANOVA between majority racial/ethnic group and vaccination rates
@@ -255,10 +263,7 @@ for (i in 1:nrow(cleanvaxdata_LAMET_NONA)) {
   ##t tests and standard errors for the different income tertiles + prop vax truncated
     #t test for MHItertiles 'Low'
         t.test(cleanvaxdata_LAMET_NONA[cleanvaxdata_LAMET_NONA$MHItertiles=='Low', "prop_fully_vax_truncated"])
-        
-    #load plotrix package for the standard error
-        library(plotrix)
-        
+   
     #find the standard error of MHItertiles 'Low'
         std.error(cleanvaxdata_LAMET_NONA[cleanvaxdata_LAMET_NONA$MHItertiles=='Low', "prop_fully_vax_truncated"])
         
@@ -283,7 +288,6 @@ for (i in 1:nrow(cleanvaxdata_LAMET_NONA)) {
         
     #summary of the model
         summary(model2)
-        
         
   ##t tests and standard errors of the different racial/ethnic classifications + prop vax truncated
     #t test for majority_race_ethn 'mixed'
@@ -316,10 +320,7 @@ for (i in 1:nrow(cleanvaxdata_LAMET_NONA)) {
     #find the standard error of majority_race_ethn 'nhwhite'
         std.error(cleanvaxdata_LAMET_NONA[cleanvaxdata_LAMET_NONA$majority_race_ethn=='nhwhite', "prop_fully_vax_truncated"])
         
-## Trying to run an ANCOVA
-#load dplyr package
-library(dplyr)
-library(tidyr)
+###### Run an ANCOVA ######
 
     # ANCOVA cross tab
     table_example <- cleanvaxdata_LAMET_NONA %>% group_by(MHItertiles, majority_race_ethn) %>% summarise(mean_rate=mean(prop_fully_vax_truncated)) %>% spread(MHItertiles, mean_rate)
@@ -327,12 +328,7 @@ library(tidyr)
     # save as .csv
     write.csv(table_example, file="ancova cross tab.csv")
 
-
-
-## How to save data file as .csv named "output" as an example
-write.csv(cleanvaxdata_LAMET_NONA, 'output.csv')
-
-## Running inferential statistics
+###### Running inferential statistics ######
 #compute the standard error of the mean
 ## calculating SE -- inferential statistics, because although my data represents the universe, my exposures are from a sample and there may be sampling error
     # Calculate the mean and standard error
@@ -341,7 +337,7 @@ write.csv(cleanvaxdata_LAMET_NONA, 'output.csv')
     # Calculate the confidence interval -- if small, we can say my sample mean is very predictive of the true population mean
     confint(l.model, level=0.95)
 
-## Creating a clean datasat for GIS
+###### Creating a clean datasat for GIS ######
     #select variables v1, v2, v3
     myvars <- c("prop_fully_vax_truncated", "MHItertiles", "majority_race_ethn")
     GISdata <- cleanvaxdata_LAMET_NONA[myvars]
@@ -431,9 +427,7 @@ write.csv(cleanvaxdata_LAMET_NONA, 'output.csv')
     
    summary(two_way_anova)
    
-   
 ## how to find the p-value for each row in the three-way cross tab 
-   
    #Hispanic
    tempdf <- cleanvaxdata_LAMET_NONA[cleanvaxdata_LAMET_NONA$majority_race_ethn == 'hisp',]
    
@@ -461,7 +455,6 @@ write.csv(cleanvaxdata_LAMET_NONA, 'output.csv')
    
    
    ## how to find the p-value for each column in the three-way cross tab
-   
    #Low income
    tempdf <- cleanvaxdata_LAMET_NONA[cleanvaxdata_LAMET_NONA$MHItertiles == 'Low',]
    
@@ -478,8 +471,6 @@ write.csv(cleanvaxdata_LAMET_NONA, 'output.csv')
    summary(aov(tempdf$prop_fully_vax_truncated~tempdf$majority_race_ethn, data=tempdf))
    
   ## Univariate box plots 
-   #load package for color palettes
-   library(RColorBrewer)
    #display the orange-red color palette
    display.brewer.pal(n = 8, name = 'OrRd')
    
@@ -502,10 +493,6 @@ write.csv(cleanvaxdata_LAMET_NONA, 'output.csv')
            axis.title = element_text(color="black", size=14))
    
    # trying to add gradient color to income level univariate box plot
-
-    #load package for color palettes
-     library(RColorBrewer)
-   
     #display the orange-red color palette
      display.brewer.pal(n = 8, name = 'OrRd')
      
